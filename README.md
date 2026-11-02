@@ -24,4 +24,4 @@ To test the backend independently, send POST requests with standard JSON payload
 ## Assumptions, Limitations, and AI Usage
 * **Assumptions:** The host server has Apache, MySQL, and PHP pre-installed and running. 
 * **Limitations:** The application currently relies on standard HTTP. Passwords are hashed using MD5.
-* **AI Usage:** AI was used for documentation formatting and help with tool navigation
+* **AI Usage:** AI was used for documentation formatting and help with tool navigation. AI assistance was also used to generate the UML diagrams in `docs/uml`; the diagrams were then checked against the source code and corrected.

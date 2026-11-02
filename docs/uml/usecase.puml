@@ -1,0 +1,76 @@
+@startuml usecase
+' ==========================================================
+'  COLORS Web Application - Use Case Diagram
+'  Source of truth: public/index.html, color.html,
+'  public/js/code.js, api/Login.php, api/AddColor.php,
+'  api/SearchColors.php
+' ==========================================================
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #F5F8FF
+  BorderColor #3B5B92
+}
+skinparam note {
+  BackgroundColor #FFFBE6
+  BorderColor #C9A227
+}
+
+title COLORS Web Application - Use Case Diagram
+
+actor "User" as User
+actor "MySQL Database\n(COP4331)" as DB <<system>>
+
+rectangle "COLORS Web Application (LAMP)" {
+  usecase "Log Out" as UC_Logout
+  usecase UC_Login as "Log In
+  --
+  extension points:
+  invalid credentials"
+  usecase "Search Colors" as UC_Search
+  usecase "Add Color" as UC_Add
+
+  usecase "Validate Credentials\n(Login.php)" as UC_Validate
+  usecase "Show Login Error" as UC_LoginError
+}
+
+User -- UC_Logout
+User -- UC_Login
+User -- UC_Search
+User -- UC_Add
+
+UC_Login ..> UC_Validate : <<include>>
+UC_Login <.. UC_LoginError : <<extend>>
+
+UC_Validate -- DB
+UC_Search -- DB
+UC_Add -- DB
+
+note bottom of UC_Login
+  On success, code.js calls saveCookie()
+  (firstName, lastName, userId; expires in
+  20 min) and redirects to color.html.
+end note
+
+note right of UC_LoginError
+  Extension condition (invalid credentials):
+  Login.php finds no matching user and returns id 0,
+  so code.js (userId < 1) shows
+  "User/Password combination incorrect".
+  No cookie is saved.
+end note
+
+note "Precondition for Search Colors and Add Color:\ncolor.html ran readCookie() when it loaded and found a\nuserId (otherwise it redirected to index.html).\nBoth requests send that in-memory userId; the cookie is\nnot re-read per click. The API filters (SELECT) or tags\n(INSERT) rows by the userId it receives and does not\nverify it on the server." as N_Pre
+UC_Search .. N_Pre
+UC_Add .. N_Pre
+
+note left of UC_Logout
+  Expires the cookie and
+  returns to index.html.
+  No server call.
+end note
+
+@enduml

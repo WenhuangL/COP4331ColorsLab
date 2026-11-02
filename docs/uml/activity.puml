@@ -1,0 +1,124 @@
+@startuml activity
+' ==========================================================
+'  COLORS Web Application - Activity Diagram
+'  End-to-end flow: log in -> search / add colors -> log out
+'  Swimlanes follow the real tiers of the LAMP app:
+'    User | Browser (code.js) | PHP API (/LAMPAPI) | MySQL
+' ==========================================================
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam activity {
+  BackgroundColor #F5F8FF
+  BorderColor #3B5B92
+  DiamondBackgroundColor #FFFFFF
+  DiamondBorderColor #3B5B92
+}
+skinparam swimlane {
+  TitleFontStyle bold
+}
+skinparam note {
+  BackgroundColor #FFFBE6
+  BorderColor #C9A227
+}
+
+title COLORS Web Application - Activity Diagram
+
+|User|
+start
+:Open site (index.html);
+
+' ---------------- Log In (index.html) ----------------
+repeat
+  |User|
+  :Enter username and password,\nclick "Do It";
+  |Browser (code.js)|
+  :doLogin(): reset userId, firstName, lastName;
+  :POST Login.php\n{login, password};
+  |PHP API (/LAMPAPI)|
+  :Login.php: decode JSON,\nconnect to MySQL;
+  |MySQL (COP4331)|
+  :SELECT ID, firstName, lastName\nFROM Users\nWHERE Login = ? AND Password = ?;
+  |PHP API (/LAMPAPI)|
+  if (Row found?) then (yes)
+    :returnWithInfo()\n{id, firstName, lastName, error: ""};
+  else (no)
+    :returnWithError("No Records Found")\n{id: 0, ..., error};
+  endif
+  |Browser (code.js)|
+  :userId = response.id;
+  backward :Show "User/Password\ncombination incorrect";
+repeat while (userId < 1?) is (yes) not (no)
+
+:firstName, lastName = response;
+:saveCookie(): firstName, lastName,\nuserId (expires in 20 min);
+:Redirect to color.html;
+
+' ---------------- color.html ----------------
+:readCookie() on page load;
+note right
+  Also runs when color.html is opened
+  directly (bookmark, expired cookie).
+end note
+if (userId in cookie?) then (no)
+  :Redirect to index.html;
+  stop
+else (yes)
+endif
+
+repeat
+  |User|
+  :Fill in a text box and click ONE button:\n"Search Color", "Add Color" or "Log Out";
+  note right
+    One click per pass: at most one
+    branch below runs, then the loop
+    returns here.
+  end note
+  |Browser (code.js)|
+
+  ' ----- Search Colors -----
+  if ("Search Color" clicked?) then (yes)
+    :searchColor(): POST SearchColors.php\n{search, userId};
+    |PHP API (/LAMPAPI)|
+    :SearchColors.php: decode JSON,\nconnect to MySQL;
+    |MySQL (COP4331)|
+    :SELECT Name FROM Colors\nWHERE Name LIKE '%search%'\nAND UserID = ?;
+    |PHP API (/LAMPAPI)|
+    if (Rows found?) then (yes)
+      :returnWithInfo()\n{results: [names], error: ""};
+    else (no)
+      :returnWithError(\n"No Records Found");
+    endif
+    |Browser (code.js)|
+    :Show "Color(s) has been retrieved"\nand list results in <p id="colorList">;
+    note left
+      If no colors match, the response has
+      no "results" array, so code.js cannot
+      fill the list (a JavaScript error is
+      thrown and the old list stays).
+    end note
+  else (no)
+  endif
+
+  ' ----- Add Color -----
+  if ("Add Color" clicked?) then (yes)
+    :addColor(): POST AddColor.php\n{color, userId};
+    |PHP API (/LAMPAPI)|
+    :AddColor.php: decode JSON,\nconnect to MySQL;
+    |MySQL (COP4331)|
+    :INSERT INTO Colors (UserID, Name)\nVALUES (?, ?);
+    |PHP API (/LAMPAPI)|
+    :Return {error: ""};
+    |Browser (code.js)|
+    :Show "Color has been added";
+  else (no)
+  endif
+
+repeat while ("Log Out" clicked?) is (no) not (yes)
+
+' ---------------- Log Out ----------------
+:doLogout(): reset userId, firstName,\nlastName and expire the cookie;
+:Redirect to index.html;
+|User|
+stop
+
+@enduml
