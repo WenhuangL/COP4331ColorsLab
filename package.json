@@ -1,0 +1,36 @@
+{
+  "name": "lamp-colors",
+  "version": "1.0.0",
+  "description": "The COLORS Lab will showcase log in, add new colors, and search features for an existing color database.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "lint": "npm run lint:html && npm run lint:css && npm run lint:js",
+    "lint:html": "htmlhint \"**/*.html\" --ignore \"node_modules/**\"",
+    "lint:css": "stylelint \"**/*.css\"",
+    "lint:js": "eslint .",
+    "lint:fix": "stylelint \"**/*.css\" --fix && eslint . --fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WenhuangL/COP4331ColorsLab.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/WenhuangL/COP4331ColorsLab/issues"
+  },
+  "homepage": "https://github.com/WenhuangL/COP4331ColorsLab#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "htmlhint": "^1.9.2",
+    "stylelint": "^18.0.0",
+    "stylelint-config-standard": "^41.0.0"
+  }
+}
