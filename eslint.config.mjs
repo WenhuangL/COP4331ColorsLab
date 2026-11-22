@@ -17,4 +17,12 @@ export default [
       "no-unused-vars": "warn",
     },
   },
+  {
+    // Jest test files run in Node, not the browser
+    files: ["tests/**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: { ...globals.node, ...globals.jest },
+    },
+  },
 ];
