@@ -2,3 +2,4 @@
 .vscode/
 .idea/
 node_modules/
+php-server.log

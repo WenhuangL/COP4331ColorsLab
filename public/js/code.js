@@ -67,29 +67,58 @@ function saveCookie()
 	document.cookie = "firstName=" + firstName + ",lastName=" + lastName + ",userId=" + userId + ";expires=" + date.toGMTString();
 }
 
-function readCookie()
+// Pure helper: turns "firstName=Ann,lastName=Lee,userId=3" into an object.
+// userId is -1 when it's missing or not a number (treated as "not logged in").
+function parseCookie(cookieString)
 {
-	userId = -1;
-	let data = document.cookie;
-	let splits = data.split(",");
-	for(var i = 0; i < splits.length; i++) 
+	let parsed = { firstName: "", lastName: "", userId: -1 };
+	let splits = (cookieString || "").split(",");
+	for( let i = 0; i < splits.length; i++ )
 	{
-		let thisOne = splits[i].trim();
-		let tokens = thisOne.split("=");
-		if( tokens[0] ==="firstName" )
+		let tokens = splits[i].trim().split("=");
+		let key = tokens[0];
+		let value = (tokens[1] || "").trim();
+		if( key === "firstName" )
 		{
-			firstName = tokens[1];
+			parsed.firstName = value;
 		}
-		else if( tokens[0] ==="lastName" )
+		else if( key === "lastName" )
 		{
-			lastName = tokens[1];
+			parsed.lastName = value;
 		}
-		else if( tokens[0] ==="userId" )
+		else if( key === "userId" )
 		{
-			userId = parseInt( tokens[1].trim() );
+			let id = parseInt( value, 10 );
+			parsed.userId = isNaN( id ) ? -1 : id;
 		}
 	}
-	
+	return parsed;
+}
+
+// Pure helper: form validation for the "Add Color" box.
+function isValidColorName(name)
+{
+	if( typeof name !== "string" )
+	{
+		return false;
+	}
+	let trimmed = name.trim();
+	return trimmed.length > 0 && trimmed.length <= 50;
+}
+
+// Pure helper: formats the API's results array for display.
+function formatColorList(results)
+{
+	return results.join( "<br />\r\n" );
+}
+
+function readCookie()
+{
+	let parsed = parseCookie( document.cookie );
+	firstName = parsed.firstName;
+	lastName = parsed.lastName;
+	userId = parsed.userId;
+
 	if( userId < 0 )
 	{
 		window.location.href = "index.html";
@@ -114,7 +143,13 @@ function addColor()
 	let newColor = document.getElementById("colorText").value;
 	document.getElementById("colorAddResult").innerHTML = "";
 
-	let tmp = {color:newColor,userId:userId};
+	if( !isValidColorName( newColor ) )
+	{
+		document.getElementById("colorAddResult").innerHTML = "Enter a color name (1-50 characters)";
+		return;
+	}
+
+	let tmp = {color:newColor.trim(),userId:userId};
 	let jsonPayload = JSON.stringify( tmp );
 
 	let url = urlBase + '/AddColor.' + extension;
@@ -144,8 +179,6 @@ function searchColor()
 {
 	let srch = document.getElementById("searchText").value;
 	document.getElementById("colorSearchResult").innerHTML = "";
-	
-	let colorList = "";
 
 	let tmp = {search:srch,userId:userId};
 	let jsonPayload = JSON.stringify( tmp );
@@ -163,17 +196,8 @@ function searchColor()
 			{
 				document.getElementById("colorSearchResult").innerHTML = "Color(s) has been retrieved";
 				let jsonObject = JSON.parse( xhr.responseText );
-				
-				for( let i=0; i<jsonObject.results.length; i++ )
-				{
-					colorList += jsonObject.results[i];
-					if( i < jsonObject.results.length - 1 )
-					{
-						colorList += "<br />\r\n";
-					}
-				}
-				
-				document.getElementsByTagName("p")[0].innerHTML = colorList;
+
+				document.getElementsByTagName("p")[0].innerHTML = formatColorList( jsonObject.results || [] );
 			}
 		};
 		xhr.send(jsonPayload);
@@ -183,4 +207,12 @@ function searchColor()
 		document.getElementById("colorSearchResult").innerHTML = err.message;
 	}
 	
+}
+
+// Lets Jest require() the helpers above. Browsers skip this block because
+// `module` only exists in Node, so the page works exactly as before.
+/* global module */
+if( typeof module !== "undefined" && module.exports )
+{
+	module.exports = { parseCookie, isValidColorName, formatColorList };
 }
